@@ -25,6 +25,18 @@ export const registerSchema = z
       .min(2, "Name must be at least 2 characters")
       .max(120, "Name is too long"),
     email: z.string().trim().email("Enter a valid email address"),
+    phone: z
+      .string()
+      .optional()
+      .refine(
+        (value) => {
+          if (!value || value.trim() === "") return true;
+          return /^[+]?[0-9\s-]{10,15}$/.test(value.trim());
+        },
+        {
+          message: "Enter a valid phone number (10-15 digits, with optional + and spaces)",
+        }
+      ),
     password: passwordField,
     confirmPassword: z.string(),
     role: z.enum(["SELLER", "BUYER"]),

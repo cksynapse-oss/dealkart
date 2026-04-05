@@ -54,6 +54,7 @@ export default function RegisterPage() {
     defaultValues: {
       fullName: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
       role: "SELLER",
@@ -138,6 +139,7 @@ export default function RegisterPage() {
             role: selectedRole,
             full_name: values.fullName,
             email: values.email,
+            mobile: values.phone || null,
           },
           { onConflict: "id" }
         );
@@ -295,6 +297,25 @@ export default function RegisterPage() {
               {form.formState.errors.email?.message ? (
                 <p className="text-sm text-red-600">
                   {form.formState.errors.email.message}
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium">
+                Phone number (optional)
+              </Label>
+              <Input
+                id="phone"
+                type="tel"
+                autoComplete="tel"
+                placeholder="+91 98765 43210"
+                className="h-12 text-base"
+                aria-invalid={!!form.formState.errors.phone}
+                {...form.register("phone")}
+              />
+              {form.formState.errors.phone?.message ? (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.phone.message}
                 </p>
               ) : null}
             </div>

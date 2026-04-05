@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { LayoutDashboard, FileCheck, Shield, Users } from "lucide-react";
+import { LayoutDashboard, FileCheck, FileText, Shield, Users } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/listings", label: "Listings", icon: FileCheck },
+  { href: "/admin/documents", label: "Documents", icon: FileText },
   { href: "/admin/ndas", label: "NDA Requests", icon: Shield },
   { href: "/admin/users", label: "Users", icon: Users },
 ];
