@@ -55,6 +55,7 @@ export default async function SellerDashboardPage() {
     .order("created_at", { ascending: false });
 
   const list = (listings ?? []) as Listing[];
+  const activeListings = list.filter(l => l.status !== "REJECTED");
   const listingIds = list.map((l) => l.id);
 
   let ndaCount = 0;
@@ -148,13 +149,11 @@ export default async function SellerDashboardPage() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold text-slate-900">Your listings</h2>
-        <DashboardCreateListingButton
-          label={
-            list.length === 0
-              ? "Create Your First Listing"
-              : "Create listing"
-          }
-        />
+        {activeListings.length === 0 && (
+          <DashboardCreateListingButton
+            label={list.length === 0 ? "Create Your First Listing" : "Create New Listing"}
+          />
+        )}
       </div>
 
       <Card className="border-slate-200 shadow-sm">

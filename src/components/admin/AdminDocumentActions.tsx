@@ -42,7 +42,6 @@ export function AdminDocumentActions({ document }: Props) {
         .from("seller_documents")
         .update({
           verification_status: "APPROVED",
-          verified_at: new Date().toISOString(),
         })
         .eq("id", document.id);
 
@@ -73,7 +72,6 @@ export function AdminDocumentActions({ document }: Props) {
         .update({
           verification_status: "REJECTED",
           rejection_reason: rejectReason.trim(),
-          verified_at: new Date().toISOString(),
         })
         .eq("id", document.id);
 
@@ -116,7 +114,7 @@ export function AdminDocumentActions({ document }: Props) {
           </Button>
 
           <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-            <AlertDialogTrigger asChild>
+            <AlertDialogTrigger>
               <Button
                 variant="outline"
                 size="sm"

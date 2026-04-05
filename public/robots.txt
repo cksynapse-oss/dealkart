@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /seller/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /*?*
+
+# Allow specific important pages
+Allow: /buyer/marketplace
+Allow: /buyer/listing
+
+# Sitemap location
+Sitemap: https://thebuzsale.com/sitemap.xml
+
+# Crawl delay (optional, be nice to servers)
+Crawl-delay: 1

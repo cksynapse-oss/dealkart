@@ -132,6 +132,7 @@ export const Layer3Documents = forwardRef<
       upload_status: "UPLOADED",
       verification_status: "PENDING",
       license_number: slot.slotKey,
+      uploaded_at: new Date().toISOString(),
     });
 
     if (insErr) {

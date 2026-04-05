@@ -1,6 +1,47 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Shield, CheckCircle, Lock, ArrowRight, Building2, Search, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "TheBuzSale — India's MSME M&A Marketplace",
+  description: "Buy and sell verified MSME businesses in India. CA-reviewed financials, GST-verified listings, NDA-protected deals. Close in 4 weeks, not 4 months.",
+  keywords: [
+    "MSME marketplace India",
+    "buy business India",
+    "sell business India",
+    "verified business listings",
+    "CA reviewed financials",
+    "M&A platform India",
+    "small business sale",
+    "enterprise acquisition",
+  ],
+  openGraph: {
+    title: "TheBuzSale — India's MSME M&A Marketplace",
+    description: "Buy and sell verified MSME businesses in India. CA-reviewed financials, GST-verified listings, NDA-protected deals.",
+    url: "/",
+    images: [
+      {
+        url: "/og-home.png",
+        width: 1200,
+        height: 630,
+        alt: "TheBuzSale - India's MSME M&A Marketplace",
+      },
+    ],
+  },
+  twitter: {
+    title: "TheBuzSale — India's MSME M&A Marketplace",
+    description: "Buy and sell verified MSME businesses in India. CA-reviewed financials, GST-verified listings, NDA-protected deals.",
+    images: [
+      {
+        url: "/og-home.png",
+        width: 1200,
+        height: 630,
+        alt: "TheBuzSale - India's MSME M&A Marketplace",
+      },
+    ],
+  },
+};
 
 export default function LandingPage() {
   return (

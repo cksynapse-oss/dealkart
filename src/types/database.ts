@@ -94,6 +94,7 @@ export interface SellerDocument {
   verification_status: DocVerificationStatus;
   license_number: string | null;
   expiry_date: string | null;
+  rejection_reason: string | null;
   uploaded_at: string;
 }
 

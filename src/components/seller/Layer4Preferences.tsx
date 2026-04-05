@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -110,6 +111,7 @@ export function Layer4Preferences({
 }: Layer4PreferencesProps) {
   void _financials;
   const supabase = createClient();
+  const router = useRouter();
   const [celebration, setCelebration] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   const [tagInput, setTagInput] = useState("");
@@ -185,6 +187,21 @@ export function Layer4Preferences({
     setTagInput("");
   };
 
+  const createListing = async () => {
+    try {
+      const res = await fetch("/api/seller/listings", { method: "POST" });
+      const body = (await res.json()) as { error?: string; ok?: boolean; listingId?: string };
+      if (!res.ok) {
+        toast.error(body.error ?? "Could not create listing");
+        return false;
+      }
+      return true;
+    } catch {
+      toast.error("Network error");
+      return false;
+    }
+  };
+
   const onSubmit = form.handleSubmit(async (values) => {
     const parsed = layer4Schema.safeParse(values);
     if (!parsed.success) {
@@ -231,8 +248,19 @@ export function Layer4Preferences({
       return;
     }
 
+    // Auto-create listing when onboarding is completed
+    const listingCreated = await createListing();
+    if (listingCreated) {
+      toast.success("Your business has been listed! It's pending admin review.");
+    }
+
     setCelebration(true);
     onComplete();
+    
+    // Redirect to dashboard after a short delay
+    setTimeout(() => {
+      router.push("/seller/dashboard");
+    }, 2000);
   });
 
   const rupeeBlur = (name: "min_buyer_budget") => {

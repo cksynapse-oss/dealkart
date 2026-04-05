@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createAdminClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ExternalLink, FileText } from "lucide-react";
@@ -8,18 +9,45 @@ import Link from "next/link";
 import { AdminDocumentActions } from "@/components/admin/AdminDocumentActions";
 
 async function getDocuments() {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/admin/documents`, {
-    method: 'GET',
-    cache: 'no-store'
-  });
+  const supabase = await createAdminClient();
+  
+  const { data: documents, error } = await supabase
+    .from("seller_documents")
+    .select(`
+      *,
+      seller_profiles!inner(
+        id,
+        business_name,
+        user_id,
+        profiles!inner(
+          full_name,
+          email
+        )
+      )
+    `)
+    .order("uploaded_at", { ascending: false });
 
-  if (!response.ok) {
-    console.error('Error fetching documents:', await response.text());
+  if (error) {
+    console.error("Error fetching documents:", error);
     return [];
   }
 
-  const data = await response.json();
-  return data.documents || [];
+  // Generate signed URLs for each document
+  const documentsWithUrls = await Promise.all(
+    (documents || []).map(async (doc) => {
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from("seller-documents")
+        .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
+
+      return {
+        ...doc,
+        signedUrl: signedUrlError ? null : signedUrlData.signedUrl,
+        signedUrlError: signedUrlError?.message || null,
+      };
+    })
+  );
+
+  return documentsWithUrls;
 }
 
 function statusBadgeVariant(status: string) {
@@ -141,20 +169,19 @@ export default async function AdminDocumentsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {doc.signedUrl && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              asChild
+                            <Link
+                              href={doc.signedUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
                             >
-                              <Link
-                                href={doc.signedUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <Button
+                                variant="outline"
+                                size="sm"
                               >
                                 <ExternalLink className="size-4" />
                                 View
-                              </Link>
-                            </Button>
+                              </Button>
+                            </Link>
                           )}
                           <AdminDocumentActions document={doc} />
                         </div>
