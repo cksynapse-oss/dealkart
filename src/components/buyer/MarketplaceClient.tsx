@@ -5,7 +5,7 @@ import { SlidersHorizontal, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { ListingCard } from "@/components/buyer/ListingCard";
 import {
   DEAL_TYPES, INDUSTRIES, INDIAN_STATES, REVENUE_RANGES,
@@ -274,11 +274,15 @@ export function MarketplaceClient({ listings }: { listings: Listing[] }) {
             <div className="flex items-center gap-2">
               {/* Mobile filter button */}
               <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="md:hidden">
-                    <SlidersHorizontal className="size-4 mr-1" /> Filters
-                  </Button>
-                </SheetTrigger>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="md:hidden"
+                  onClick={() => setMobileFiltersOpen(true)}
+                >
+                  <SlidersHorizontal className="size-4 mr-1" /> Filters
+                </Button>
                 <SheetContent side="left" className="w-80 overflow-y-auto">
                   <SheetHeader>
                     <SheetTitle>Filters</SheetTitle>

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { Shield } from "lucide-react";
 
@@ -90,12 +90,14 @@ export function NDAModal({ open, onOpenChange, listingId, buyerId, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-11">
-          <Shield className="size-4 mr-2" />
-          Sign NDA & Request Access
-        </Button>
-      </DialogTrigger>
+      <Button
+        type="button"
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-11"
+        onClick={() => onOpenChange(true)}
+      >
+        <Shield className="size-4 mr-2" />
+        Sign NDA & Request Access
+      </Button>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl">Non-Disclosure Agreement</DialogTitle>

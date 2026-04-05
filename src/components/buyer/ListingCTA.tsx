@@ -90,9 +90,17 @@ export function ListingCTA({ listingId }: { listingId: string }) {
       </h3>
 
       {!userId ? (
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-11"
-          onClick={() => router.push("/auth/login")}>
-          Login to Request Access
+        <Button
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-11"
+          onClick={() => {
+            toast.info("Create an account to express interest");
+            const returnTo = `/buyer/listing/${listingId}`;
+            router.push(
+              `/auth/register?redirect=${encodeURIComponent(returnTo)}`
+            );
+          }}
+        >
+          Express interest
         </Button>
       ) : userRole !== "BUYER" ? (
         <p className="text-sm text-slate-500">Only buyers can request access to listings.</p>

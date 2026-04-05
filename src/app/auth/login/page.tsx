@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 import { AuthBrandPanel } from "@/components/auth/AuthBrandPanel";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -21,13 +20,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { loginAuthFormSchema } from "@/lib/validations/auth";
+import {
+  loginAuthFormSchema,
+  type LoginAuthFormValues,
+} from "@/lib/validations/auth";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types/database";
 import { Mail } from "lucide-react";
-
-type LoginFormValues = z.infer<typeof loginAuthFormSchema>;
 
 function redirectPathForRole(role: UserRole | undefined | null): string {
   switch (role) {
@@ -52,8 +52,9 @@ function LoginEmailForm() {
   const [resendSeconds, setResendSeconds] = useState(0);
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [passwordSigningIn, setPasswordSigningIn] = useState(false);
+  const [magicSending, setMagicSending] = useState(false);
 
-  const form = useForm<LoginFormValues>({
+  const form = useForm<LoginAuthFormValues>({
     resolver: zodResolver(loginAuthFormSchema),
     defaultValues: { email: "", password: "" },
   });
@@ -93,13 +94,18 @@ function LoginEmailForm() {
     [supabase, redirectUrl]
   );
 
-  const onMagicLinkSubmit = form.handleSubmit(async (values) => {
-    const ok = await sendLink(values.email);
+  const handleMagicLink = async () => {
+    const emailOk = await form.trigger("email");
+    if (!emailOk) return;
+    const email = form.getValues("email").trim();
+    setMagicSending(true);
+    const ok = await sendLink(email);
+    setMagicSending(false);
     if (!ok) return;
-    setSubmittedEmail(values.email);
+    setSubmittedEmail(email);
     setSent(true);
     setResendSeconds(RESEND_SECONDS);
-  });
+  };
 
   const handleResend = async () => {
     if (resendSeconds > 0 || !submittedEmail) return;
@@ -110,15 +116,10 @@ function LoginEmailForm() {
   };
 
   const handlePasswordSignIn = form.handleSubmit(async (values) => {
-    const password = values.password?.trim() ?? "";
-    if (!password) {
-      toast.error("Enter your password");
-      return;
-    }
     setPasswordSigningIn(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: values.email.trim(),
-      password,
+      password: values.password,
     });
     if (error) {
       toast.error(error.message);
@@ -160,11 +161,11 @@ function LoginEmailForm() {
             India&apos;s most trusted MSME M&amp;A marketplace
           </span>
           <span className="block text-sm">
-            Sign in with a magic link sent to your email.
+            Sign in with your email and password.
           </span>
         </CardDescription>
         <CardDescription className="hidden text-base text-muted-foreground md:block">
-          Sign in with a magic link sent to your email.
+          Sign in with your email and password.
         </CardDescription>
       </CardHeader>
       <CardContent className="px-0">
@@ -214,7 +215,7 @@ function LoginEmailForm() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    void onMagicLinkSubmit();
+                    void handlePasswordSignIn();
                   }
                 }}
               />
@@ -224,24 +225,6 @@ function LoginEmailForm() {
                 </p>
               ) : null}
             </div>
-            <Button
-              type="button"
-              className="h-12 w-full bg-emerald-600 text-base text-white hover:bg-emerald-700"
-              disabled={form.formState.isSubmitting || passwordSigningIn}
-              onClick={() => void onMagicLinkSubmit()}
-            >
-              {form.formState.isSubmitting ? "Sending…" : "Send Login Link"}
-            </Button>
-
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center" aria-hidden>
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs font-medium uppercase tracking-wide">
-                <span className="bg-white px-3 text-muted-foreground">or</span>
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">
                 Password
@@ -252,7 +235,8 @@ function LoginEmailForm() {
                 autoComplete="current-password"
                 placeholder="••••••••"
                 className="h-12 text-base"
-                disabled={passwordSigningIn}
+                disabled={passwordSigningIn || magicSending}
+                aria-invalid={!!form.formState.errors.password}
                 {...form.register("password")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -261,15 +245,42 @@ function LoginEmailForm() {
                   }
                 }}
               />
+              {form.formState.errors.password?.message ? (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.password.message}
+                </p>
+              ) : null}
             </div>
             <Button
               type="button"
-              variant="outline"
-              className="h-12 w-full text-base"
-              disabled={passwordSigningIn || form.formState.isSubmitting}
+              className="h-12 w-full bg-emerald-600 text-base text-white hover:bg-emerald-700"
+              disabled={
+                passwordSigningIn || magicSending || form.formState.isSubmitting
+              }
               onClick={() => void handlePasswordSignIn()}
             >
-              {passwordSigningIn ? "Signing in…" : "Sign in with password"}
+              {passwordSigningIn ? "Signing in…" : "Sign in"}
+            </Button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <span className="bg-white px-3">or</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-11 w-full text-sm text-muted-foreground hover:text-foreground"
+              disabled={
+                magicSending || passwordSigningIn || form.formState.isSubmitting
+              }
+              onClick={() => void handleMagicLink()}
+            >
+              {magicSending ? "Sending…" : "Send magic link"}
             </Button>
           </form>
         )}

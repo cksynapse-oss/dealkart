@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -24,29 +25,38 @@ import {
   type RegisterFormValues,
 } from "@/lib/validations/auth";
 import { cn } from "@/lib/utils";
+import type { UserRole } from "@/types/database";
 import { ArrowRight, Mail, Search, Store } from "lucide-react";
 
-function randomSignupPassword(): string {
-  const alphabet =
-    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#$%^&*";
-  const buf = new Uint8Array(48);
-  crypto.getRandomValues(buf);
-  let out = "";
-  for (let i = 0; i < buf.length; i++) {
-    out += alphabet[buf[i]! % alphabet.length]!;
+function redirectPathForRole(role: UserRole | undefined | null): string {
+  switch (role) {
+    case "SELLER":
+      return "/seller/dashboard";
+    case "BUYER":
+      return "/buyer/marketplace";
+    case "ADMIN":
+      return "/admin/dashboard";
+    default:
+      return "/";
   }
-  return out;
 }
 
 export default function RegisterPage() {
   const supabase = createClient();
+  const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<"SELLER" | "BUYER" | null>(null);
-  const [done, setDone] = useState(false);
+  const [awaitingEmail, setAwaitingEmail] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", role: "SELLER" },
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "SELLER",
+    },
   });
 
   const goStep2 = (selected: "SELLER" | "BUYER") => {
@@ -60,14 +70,13 @@ export default function RegisterPage() {
       toast.error("Choose how you want to use TheBuzSale.");
       return;
     }
-    const password = randomSignupPassword();
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password,
+    const { data, error } = await supabase.auth.signUp({
+      email: values.email.trim(),
+      password: values.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
-          full_name: values.fullName,
+          full_name: values.fullName.trim(),
           role: values.role,
         },
       },
@@ -76,7 +85,39 @@ export default function RegisterPage() {
       toast.error(error.message);
       return;
     }
-    setDone(true);
+
+    if (data.session && data.user) {
+      const selectedRole = values.role;
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            id: data.user!.id,
+            role: selectedRole,
+            full_name: values.fullName,
+            email: values.email,
+          },
+          { onConflict: "id" }
+        );
+
+      if (profileError) {
+        console.error("Profile creation failed:", profileError);
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      const metaRole = data.user.user_metadata?.role as UserRole | undefined;
+      const resolvedRole = profile?.role ?? metaRole;
+      router.push(redirectPathForRole(resolvedRole));
+      router.refresh();
+      return;
+    }
+
+    setAwaitingEmail(true);
+    toast.success("Check your email to finish signing up.");
   });
 
   const roleCardShell =
@@ -97,23 +138,23 @@ export default function RegisterPage() {
         <CardDescription className="text-base text-muted-foreground md:hidden">
           India&apos;s most trusted MSME M&amp;A marketplace
         </CardDescription>
-        {!done ? (
+        {!awaitingEmail ? (
           <CardDescription className="mt-1 text-sm text-muted-foreground md:hidden">
             {step === 1
               ? "How would you like to use TheBuzSale?"
-              : "Tell us who you are."}
+              : "Create your account."}
           </CardDescription>
         ) : null}
         <CardDescription className="hidden text-base text-muted-foreground md:block">
-          {done
-            ? "Almost there — confirm your email to continue."
+          {awaitingEmail
+            ? "Confirm your email to continue."
             : step === 1
               ? "How would you like to use TheBuzSale?"
-              : "Tell us who you are."}
+              : "Create your account."}
         </CardDescription>
       </CardHeader>
       <CardContent className="px-0">
-        {done ? (
+        {awaitingEmail ? (
           <div className="flex flex-col items-center gap-6 py-6 text-center">
             <div className="flex size-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
               <Mail className="size-7" aria-hidden />
@@ -126,7 +167,8 @@ export default function RegisterPage() {
               <span className="font-medium text-foreground">
                 {form.getValues("email")}
               </span>
-              . Open it to activate your account.
+              . Open it to activate your account, or disable email confirmation
+              in Supabase for instant access.
             </p>
           </div>
         ) : step === 1 ? (
@@ -214,6 +256,44 @@ export default function RegisterPage() {
                 </p>
               ) : null}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                className="h-12 text-base"
+                aria-invalid={!!form.formState.errors.password}
+                {...form.register("password")}
+              />
+              {form.formState.errors.password?.message ? (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.password.message}
+                </p>
+              ) : null}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword" className="text-sm font-medium">
+                Confirm password
+              </Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Re-enter password"
+                className="h-12 text-base"
+                aria-invalid={!!form.formState.errors.confirmPassword}
+                {...form.register("confirmPassword")}
+              />
+              {form.formState.errors.confirmPassword?.message ? (
+                <p className="text-sm text-red-600">
+                  {form.formState.errors.confirmPassword.message}
+                </p>
+              ) : null}
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:gap-4">
               <Button
                 type="button"
@@ -231,7 +311,7 @@ export default function RegisterPage() {
                 className="h-12 flex-1 bg-emerald-600 text-base text-white hover:bg-emerald-700 sm:max-w-xs sm:flex-none sm:min-w-48"
                 disabled={form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting ? "Sending…" : "Create account"}
+                {form.formState.isSubmitting ? "Creating…" : "Create account"}
               </Button>
             </div>
           </form>

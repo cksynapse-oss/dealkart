@@ -24,8 +24,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   if (!listing || listing.status !== "LIVE") notFound();
 
-  // Increment view count
-  await supabase.rpc("increment_view_count", { listing_uuid: id }).catch(() => {});
+  await supabase.rpc("increment_view_count", { listing_uuid: id });
 
   const margin = listing.revenue_latest && listing.ebitda_latest
     ? Math.round((listing.ebitda_latest / listing.revenue_latest) * 100)

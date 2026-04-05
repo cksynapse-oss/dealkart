@@ -16,6 +16,8 @@ import type { UserRole } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { LogOut, Menu, User } from "lucide-react";
 
+const supabase = createClient();
+
 const roleLabels: Record<UserRole, string> = {
   SELLER: "Seller",
   BUYER: "Buyer",
@@ -30,7 +32,6 @@ function roleBadgeClass(role: UserRole): string {
 
 export function Navbar() {
   const router = useRouter();
-  const supabase = createClient();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userBar, setUserBar] = useState<{
     fullName: string;
@@ -38,9 +39,24 @@ export function Navbar() {
   } | null>(null);
 
   const loadProfile = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    let user;
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        const msg = error.message ?? "";
+        if (/lock/i.test(msg) || /abort/i.test(msg)) return;
+        setUserBar(null);
+        return;
+      }
+      user = data.user;
+    } catch (e) {
+      const name = e instanceof Error ? e.name : "";
+      const msg = e instanceof Error ? e.message : String(e);
+      if (name === "AbortError" || /lock/i.test(msg) || /abort/i.test(msg)) {
+        return;
+      }
+      throw e;
+    }
     if (!user) {
       setUserBar(null);
       return;
@@ -60,7 +76,7 @@ export function Navbar() {
       "Account";
     const role = profile?.role ?? metaRole ?? "BUYER";
     setUserBar({ fullName, role });
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
     void loadProfile();
@@ -70,7 +86,7 @@ export function Navbar() {
       void loadProfile();
     });
     return () => subscription.unsubscribe();
-  }, [supabase, loadProfile]);
+  }, [loadProfile]);
 
   const handleLogout = async () => {
     setMobileOpen(false);
@@ -90,6 +106,15 @@ export function Navbar() {
         layout === "column" ? "flex-col" : "flex-row items-center"
       )}
     >
+      <Link
+        href="/buyer/marketplace"
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "sm" }),
+          layout === "column" && "w-full justify-center"
+        )}
+      >
+        Browse Businesses
+      </Link>
       <Link
         href="/auth/login"
         className={cn(

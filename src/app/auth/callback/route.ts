@@ -3,6 +3,19 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/types/database";
 
+function pathForRole(role: UserRole | undefined | null): string {
+  switch (role) {
+    case "SELLER":
+      return "/seller/dashboard";
+    case "BUYER":
+      return "/buyer/marketplace";
+    case "ADMIN":
+      return "/admin/dashboard";
+    default:
+      return "/";
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -19,13 +32,29 @@ export async function GET(request: Request) {
     );
   }
 
+  const supabase = await createClient();
+
   if (!code) {
+    const {
+      data: { user: existingUser },
+    } = await supabase.auth.getUser();
+    if (existingUser) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", existingUser.id)
+        .maybeSingle();
+      const metaRole = existingUser.user_metadata?.role as UserRole | undefined;
+      const resolvedRole: UserRole | undefined = profile?.role ?? metaRole;
+      return NextResponse.redirect(
+        new URL(pathForRole(resolvedRole), url.origin)
+      );
+    }
     return NextResponse.redirect(
       new URL("/auth/login?error=missing_code", url.origin)
     );
   }
 
-  const supabase = await createClient();
   const { error: exchangeError } =
     await supabase.auth.exchangeCodeForSession(code);
 
@@ -48,6 +77,16 @@ export async function GET(request: Request) {
     );
   }
 
+  await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      role: user.user_metadata?.role ?? "BUYER",
+      full_name: user.user_metadata?.full_name ?? user.email ?? "User",
+      email: user.email,
+    },
+    { onConflict: "id" }
+  );
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -57,21 +96,7 @@ export async function GET(request: Request) {
   const metaRole = user.user_metadata?.role as UserRole | undefined;
   const resolvedRole: UserRole | undefined = profile?.role ?? metaRole;
 
-  let redirectPath: string;
-  switch (resolvedRole) {
-    case "SELLER":
-      redirectPath = "/seller/dashboard";
-      break;
-    case "BUYER":
-      redirectPath = "/buyer/marketplace";
-      break;
-    case "ADMIN":
-      redirectPath = "/admin/dashboard";
-      break;
-    default:
-      redirectPath = "/";
-      break;
-  }
-
-  return NextResponse.redirect(new URL(redirectPath, url.origin));
+  return NextResponse.redirect(
+    new URL(pathForRole(resolvedRole), url.origin)
+  );
 }
