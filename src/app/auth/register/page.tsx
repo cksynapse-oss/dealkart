@@ -118,16 +118,25 @@ export default function RegisterPage() {
     let session = data.session;
     let user = data.user;
 
-    if (!session) {
-      const signIn = await supabase.auth.signInWithPassword({
-        email: values.email.trim(),
-        password: values.password,
-      });
-      if (!signIn.error && signIn.data.session && signIn.data.user) {
-        session = signIn.data.session;
-        user = signIn.data.user;
-      }
-    }
+    if (!session && data.user) {
+  // Auto-confirm the user via admin API
+  await fetch("/api/auth/confirm-user", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: data.user.id }),
+  });
+
+  // Now sign in with password
+  const signIn = await supabase.auth.signInWithPassword({
+    email: values.email.trim(),
+    password: values.password,
+  });
+
+  if (signIn.data.session && signIn.data.user) {
+    session = signIn.data.session;
+    user = signIn.data.user;
+  }
+}
 
     if (session && user) {
       const selectedRole = values.role;
