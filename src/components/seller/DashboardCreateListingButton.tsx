@@ -16,6 +16,7 @@ export function DashboardCreateListingButton({ label }: Props) {
   const displayLabel = label ?? "Create Your First Listing";
 
   async function handleClick() {
+    if (loading) return;
     setLoading(true);
     try {
       const res = await fetch("/api/seller/listings", { method: "POST" });
@@ -24,7 +25,8 @@ export function DashboardCreateListingButton({ label }: Props) {
         toast.error(body.error ?? "Could not create listing");
         return;
       }
-      toast.success("Listing submitted for review!");
+      toast.success("Listing created! It's pending admin review.");
+      router.push("/seller/listings");
       router.refresh();
     } catch {
       toast.error("Network error");

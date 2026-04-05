@@ -26,9 +26,20 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   await supabase.rpc("increment_view_count", { listing_uuid: id });
 
-  const margin = listing.revenue_latest && listing.ebitda_latest
-    ? Math.round((listing.ebitda_latest / listing.revenue_latest) * 100)
-    : null;
+  const rev =
+    listing.revenue_latest == null
+      ? null
+      : Number(listing.revenue_latest);
+  const ebitdaNum =
+    listing.ebitda_latest == null ? null : Number(listing.ebitda_latest);
+  const margin =
+    rev != null &&
+    Number.isFinite(rev) &&
+    rev > 0 &&
+    ebitdaNum != null &&
+    Number.isFinite(ebitdaNum)
+      ? Math.round((ebitdaNum / rev) * 100)
+      : null;
 
   const whyBuy: string[] = Array.isArray(listing.why_buy) ? listing.why_buy : [];
 

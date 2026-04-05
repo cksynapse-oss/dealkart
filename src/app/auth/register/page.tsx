@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -44,6 +44,7 @@ function redirectPathForRole(role: UserRole | undefined | null): string {
 export default function RegisterPage() {
   const supabase = createClient();
   const router = useRouter();
+  const [authChecking, setAuthChecking] = useState(true);
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<"SELLER" | "BUYER" | null>(null);
   const [awaitingEmail, setAwaitingEmail] = useState(false);
@@ -58,6 +59,33 @@ export default function RegisterPage() {
       role: "SELLER",
     },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    const client = createClient();
+    (async () => {
+      const {
+        data: { user },
+      } = await client.auth.getUser();
+      if (cancelled) return;
+      if (user) {
+        const { data: profile } = await client
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        const metaRole = user.user_metadata?.role as UserRole | undefined;
+        const resolvedRole = profile?.role ?? metaRole;
+        router.replace(redirectPathForRole(resolvedRole));
+        router.refresh();
+        return;
+      }
+      setAuthChecking(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const goStep2 = (selected: "SELLER" | "BUYER") => {
     setRole(selected);
@@ -86,13 +114,27 @@ export default function RegisterPage() {
       return;
     }
 
-    if (data.session && data.user) {
+    let session = data.session;
+    let user = data.user;
+
+    if (!session) {
+      const signIn = await supabase.auth.signInWithPassword({
+        email: values.email.trim(),
+        password: values.password,
+      });
+      if (!signIn.error && signIn.data.session && signIn.data.user) {
+        session = signIn.data.session;
+        user = signIn.data.user;
+      }
+    }
+
+    if (session && user) {
       const selectedRole = values.role;
       const { error: profileError } = await supabase
         .from("profiles")
         .upsert(
           {
-            id: data.user!.id,
+            id: user.id,
             role: selectedRole,
             full_name: values.fullName,
             email: values.email,
@@ -107,9 +149,9 @@ export default function RegisterPage() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", data.user.id)
+        .eq("id", user.id)
         .maybeSingle();
-      const metaRole = data.user.user_metadata?.role as UserRole | undefined;
+      const metaRole = user.user_metadata?.role as UserRole | undefined;
       const resolvedRole = profile?.role ?? metaRole;
       router.push(redirectPathForRole(resolvedRole));
       router.refresh();
@@ -333,6 +375,17 @@ export default function RegisterPage() {
       </CardFooter>
     </Card>
   );
+
+  if (authChecking) {
+    return (
+      <div className="flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col bg-white md:flex-row">
+        <AuthBrandPanel />
+        <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12 md:w-1/2">
+          <p className="text-muted-foreground">Loading…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col bg-white md:flex-row">

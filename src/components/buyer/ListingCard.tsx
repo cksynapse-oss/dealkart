@@ -7,10 +7,19 @@ import { Card } from "@/components/ui/card";
 import { formatINRShort, daysSince, getIndustryLabel, getEmployeeLabel } from "@/lib/utils";
 import type { Listing } from "@/types/database";
 
+function numericPaise(v: number | string | bigint | null | undefined): number | null {
+  if (v == null) return null;
+  const n = typeof v === "bigint" ? Number(v) : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function ListingCard({ listing }: { listing: Listing }) {
-  const margin = listing.revenue_latest && listing.ebitda_latest
-    ? Math.round((listing.ebitda_latest / listing.revenue_latest) * 100)
-    : null;
+  const rev = numericPaise(listing.revenue_latest);
+  const ebitda = numericPaise(listing.ebitda_latest);
+  const margin =
+    rev != null && rev > 0 && ebitda != null
+      ? Math.round((ebitda / rev) * 100)
+      : null;
 
   return (
     <Link href={`/buyer/listing/${listing.id}`} className="block group">

@@ -6,10 +6,27 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Coerce DB BIGINT / string amounts (paise) to number for formatting. */
+function paiseToNumber(paise: number | string | bigint | null | undefined): number | null {
+  if (paise == null) return null;
+  if (typeof paise === "bigint") {
+    const n = Number(paise);
+    return Number.isFinite(n) ? n : null;
+  }
+  if (typeof paise === "string") {
+    const n = Number(paise);
+    return Number.isFinite(n) ? n : null;
+  }
+  return Number.isFinite(paise) ? paise : null;
+}
+
 // Format paise (BIGINT) to Indian Rupee display
-export function formatINR(paise: number | null | undefined): string {
-  if (paise == null) return "—";
-  const rupees = paise / 100;
+export function formatINR(
+  paise: number | string | bigint | null | undefined
+): string {
+  const n = paiseToNumber(paise);
+  if (n == null) return "—";
+  const rupees = n / 100;
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
@@ -18,9 +35,12 @@ export function formatINR(paise: number | null | undefined): string {
 }
 
 // Format paise to short form (₹1.5Cr, ₹50L)
-export function formatINRShort(paise: number | null | undefined): string {
-  if (paise == null) return "—";
-  const rupees = paise / 100;
+export function formatINRShort(
+  paise: number | string | bigint | null | undefined
+): string {
+  const n = paiseToNumber(paise);
+  if (n == null) return "—";
+  const rupees = n / 100;
 
   if (rupees >= 10000000) {
     return `₹${(rupees / 10000000).toFixed(1)}Cr`;
@@ -28,7 +48,7 @@ export function formatINRShort(paise: number | null | undefined): string {
   if (rupees >= 100000) {
     return `₹${(rupees / 100000).toFixed(1)}L`;
   }
-  return formatINR(paise);
+  return formatINR(n);
 }
 
 // Parse Indian currency input string to paise

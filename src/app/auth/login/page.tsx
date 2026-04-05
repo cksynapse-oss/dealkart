@@ -48,6 +48,7 @@ function LoginEmailForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
+  const [authChecking, setAuthChecking] = useState(true);
   const [sent, setSent] = useState(false);
   const [resendSeconds, setResendSeconds] = useState(0);
   const [submittedEmail, setSubmittedEmail] = useState("");
@@ -58,6 +59,33 @@ function LoginEmailForm() {
     resolver: zodResolver(loginAuthFormSchema),
     defaultValues: { email: "", password: "" },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    const client = createClient();
+    (async () => {
+      const {
+        data: { user },
+      } = await client.auth.getUser();
+      if (cancelled) return;
+      if (user) {
+        const { data: profile } = await client
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+        const metaRole = user.user_metadata?.role as UserRole | undefined;
+        const role = profile?.role ?? metaRole;
+        router.replace(redirectPathForRole(role));
+        router.refresh();
+        return;
+      }
+      setAuthChecking(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   useEffect(() => {
     const err = searchParams.get("error");
@@ -301,6 +329,17 @@ function LoginEmailForm() {
       </CardFooter>
     </Card>
   );
+
+  if (authChecking) {
+    return (
+      <div className="flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col bg-white md:flex-row">
+        <AuthBrandPanel />
+        <div className="flex flex-1 flex-col items-center justify-center bg-white px-6 py-12 md:w-1/2">
+          <p className="text-muted-foreground">Loading…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-[calc(100dvh-3.5rem)] flex-1 flex-col bg-white md:flex-row">

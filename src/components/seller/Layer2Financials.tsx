@@ -130,6 +130,7 @@ export function Layer2Financials({
       return;
     }
 
+    // Persist amounts as paise (BIGINT): layer2FormToRow uses parseRupeesStringToPaise (rupees × 100).
     const row = layer2FormToRow(parsed.data, sellerProfileId);
 
     if (financials?.id) {
