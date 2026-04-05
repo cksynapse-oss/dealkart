@@ -47,14 +47,6 @@ export const metadata: Metadata = {
     description:
       "Verification-first marketplace for buying and selling MSME businesses in India. CA-verified financials, NDA-protected deals.",
     siteName: "TheBuzSale",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "TheBuzSale - India's MSME M&A Marketplace",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -63,14 +55,6 @@ export const metadata: Metadata = {
       "Verification-first marketplace for buying and selling MSME businesses in India. CA-verified financials, NDA-protected deals.",
     site: "@thebuzsale",
     creator: "@thebuzsale",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "TheBuzSale - India's MSME M&A Marketplace",
-      },
-    ],
   },
   robots: {
     index: true,

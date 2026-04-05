@@ -17,12 +17,8 @@ async function getDocuments() {
       *,
       seller_profiles!inner(
         id,
-        business_name,
-        user_id,
-        profiles!inner(
-          full_name,
-          email
-        )
+        business_legal_name,
+        user_id
       )
     `)
     .order("uploaded_at", { ascending: false });
@@ -133,13 +129,10 @@ export default async function AdminDocumentsPage() {
                       <td className="px-4 py-3">
                         <div>
                           <div className="font-medium">
-                            {doc.seller_profiles?.business_name || "Unknown"}
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {doc.seller_profiles?.profiles?.full_name || "Unknown"}
+                            {doc.seller_profiles?.business_legal_name || "Unknown"}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {doc.seller_profiles?.profiles?.email || "No email"}
+                            Seller ID: {doc.seller_profiles?.user_id || "Unknown"}
                           </div>
                         </div>
                       </td>

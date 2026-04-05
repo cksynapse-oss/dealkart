@@ -20,26 +20,10 @@ export const metadata: Metadata = {
     title: "TheBuzSale — India's MSME M&A Marketplace",
     description: "Buy and sell verified MSME businesses in India. CA-reviewed financials, GST-verified listings, NDA-protected deals.",
     url: "/",
-    images: [
-      {
-        url: "/og-home.png",
-        width: 1200,
-        height: 630,
-        alt: "TheBuzSale - India's MSME M&A Marketplace",
-      },
-    ],
   },
   twitter: {
     title: "TheBuzSale — India's MSME M&A Marketplace",
     description: "Buy and sell verified MSME businesses in India. CA-reviewed financials, GST-verified listings, NDA-protected deals.",
-    images: [
-      {
-        url: "/og-home.png",
-        width: 1200,
-        height: 630,
-        alt: "TheBuzSale - India's MSME M&A Marketplace",
-      },
-    ],
   },
 };
 

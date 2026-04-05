@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 
@@ -32,26 +32,27 @@ export function AdminDocumentActions({ document }: Props) {
   const [loading, setLoading] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectDialog, setShowRejectDialog] = useState(false);
-
-  const supabase = createClient();
+  const router = useRouter();
 
   const handleApprove = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("seller_documents")
-        .update({
-          verification_status: "APPROVED",
-        })
-        .eq("id", document.id);
+      const response = await fetch(`/api/admin/documents/${document.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "APPROVED" }),
+      });
 
-      if (error) {
-        toast.error(error.message);
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || "Failed to approve document");
         return;
       }
 
       toast.success("Document approved successfully");
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       toast.error("Failed to approve document");
     } finally {
@@ -67,23 +68,27 @@ export function AdminDocumentActions({ document }: Props) {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from("seller_documents")
-        .update({
-          verification_status: "REJECTED",
-          rejection_reason: rejectReason.trim(),
-        })
-        .eq("id", document.id);
+      const response = await fetch(`/api/admin/documents/${document.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          action: "REJECTED", 
+          rejection_reason: rejectReason.trim() 
+        }),
+      });
 
-      if (error) {
-        toast.error(error.message);
+      if (!response.ok) {
+        const error = await response.json();
+        toast.error(error.error || "Failed to reject document");
         return;
       }
 
       toast.success("Document rejected successfully");
       setShowRejectDialog(false);
       setRejectReason("");
-      window.location.reload();
+      router.refresh();
     } catch (error) {
       toast.error("Failed to reject document");
     } finally {

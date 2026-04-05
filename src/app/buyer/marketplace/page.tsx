@@ -18,26 +18,10 @@ export const metadata: Metadata = {
     title: "Browse Businesses | TheBuzSale",
     description: "Browse verified MSME businesses for sale in India. Filter by industry, revenue, location. CA-reviewed financials and GST-verified listings.",
     url: "/buyer/marketplace",
-    images: [
-      {
-        url: "/og-marketplace.png",
-        width: 1200,
-        height: 630,
-        alt: "Browse Businesses - TheBuzSale",
-      },
-    ],
   },
   twitter: {
     title: "Browse Businesses | TheBuzSale",
     description: "Browse verified MSME businesses for sale in India. Filter by industry, revenue, location. CA-reviewed financials and GST-verified listings.",
-    images: [
-      {
-        url: "/og-marketplace.png",
-        width: 1200,
-        height: 630,
-        alt: "Browse Businesses - TheBuzSale",
-      },
-    ],
   },
 };
 
