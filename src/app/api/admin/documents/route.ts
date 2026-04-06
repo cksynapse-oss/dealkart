@@ -14,12 +14,8 @@ export async function GET(request: NextRequest) {
         *,
         seller_profiles!inner(
           id,
-          business_name,
-          user_id,
-          profiles!inner(
-            full_name,
-            email
-          )
+          business_legal_name,
+          user_id
         )
       `)
       .order("uploaded_at", { ascending: false });
