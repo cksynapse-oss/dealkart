@@ -1,11 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 const DUMMY_SELLER_ID = "00000000-0000-0000-0000-000000000001";
 
 /** Paise = rupees × 100 */
@@ -125,31 +120,54 @@ const listings = [
 ];
 
 export async function GET() {
-  const { data: existingRows, error: selectError } = await supabaseAdmin
-    .from("listings")
-    .select("id")
-    .eq("seller_id", DUMMY_SELLER_ID);
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    // Check if already seeded
+    const { data: existingRows, error: selectError } = await supabase
+      .from("listings")
+      .select("id")
+      .limit(1);
 
-  if (selectError) {
+    if (selectError) {
+      return NextResponse.json(
+        { ok: false, error: selectError.message },
+        { status: 500 }
+      );
+    }
+
+    if (existingRows && existingRows.length > 0) {
+      return NextResponse.json({
+        ok: true,
+        count: existingRows.length,
+        message: "Already seeded",
+      });
+    }
+
+    // Insert seed data
+    const { error: insertError } = await supabase
+      .from("listings")
+      .insert(listings);
+
+    if (insertError) {
+      return NextResponse.json(
+        { ok: false, error: insertError.message },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: "Database seeded successfully",
+      count: listings.length,
+    });
+  } catch (error) {
     return NextResponse.json(
-      { ok: false, error: selectError.message },
+      { ok: false, error: "Internal server error" },
       { status: 500 }
     );
   }
-
-  if (existingRows && existingRows.length > 0) {
-    return NextResponse.json({
-      ok: true,
-      count: existingRows.length,
-      message: "Already seeded",
-    });
-  }
-
-  const { error } = await supabaseAdmin.from("listings").insert(listings);
-
-  if (error) {
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true, count: 3 });
 }
