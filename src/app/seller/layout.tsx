@@ -1,9 +1,9 @@
 import Link from "next/link";
-
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { FileText, LayoutDashboard, MessageSquare, Settings, UserCheck } from "lucide-react";
+import { redirect } from "next/navigation";
 
 const nav = [
   { href: "/seller/dashboard", label: "Dashboard", icon: LayoutDashboard, soon: false },
@@ -24,16 +24,19 @@ export default async function SellerLayout({
   } = await supabase.auth.getUser();
 
   let businessName = "Your business";
+  let onboardingStatus = null;
+
   if (user) {
-    const { data: sp } = await supabase
+    const { data: sellerProfile } = await supabase
       .from("seller_profiles")
-      .select("business_legal_name, dba_name")
+      .select("business_legal_name, dba_name, onboarding_status")
       .eq("user_id", user.id)
       .maybeSingle();
     businessName =
-      sp?.dba_name?.trim() ||
-      sp?.business_legal_name?.trim() ||
+      sellerProfile?.dba_name?.trim() ||
+      sellerProfile?.business_legal_name?.trim() ||
       "Your business";
+    onboardingStatus = sellerProfile?.onboarding_status;
   }
 
   return (
