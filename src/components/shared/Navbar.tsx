@@ -16,8 +16,6 @@ import type { UserRole } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { LogOut, Menu, User } from "lucide-react";
 
-const supabase = createClient();
-
 const roleLabels: Record<UserRole, string> = {
   SELLER: "Seller",
   BUYER: "Buyer",
@@ -31,6 +29,7 @@ function roleBadgeClass(role: UserRole): string {
 }
 
 export function Navbar() {
+  const supabase = createClient();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userBar, setUserBar] = useState<{
