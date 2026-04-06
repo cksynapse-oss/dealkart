@@ -3,10 +3,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
-import { FileText, LayoutDashboard, MessageSquare, Settings } from "lucide-react";
+import { FileText, LayoutDashboard, MessageSquare, Settings, UserCheck } from "lucide-react";
 
 const nav = [
   { href: "/seller/dashboard", label: "Dashboard", icon: LayoutDashboard, soon: false },
+  { href: "/seller/onboarding", label: "Onboarding", icon: UserCheck, soon: false },
   { href: "/seller/listings", label: "My Listings", icon: FileText, soon: false },
   { href: "/seller/messages", label: "Messages", icon: MessageSquare, soon: true },
   { href: "/seller/settings", label: "Settings", icon: Settings, soon: true },

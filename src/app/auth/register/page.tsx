@@ -31,7 +31,7 @@ import { ArrowRight, Mail, Search, Store } from "lucide-react";
 function redirectPathForRole(role: UserRole | undefined | null): string {
   switch (role) {
     case "SELLER":
-      return "/seller/dashboard";
+      return "/seller/onboarding";
     case "BUYER":
       return "/buyer/marketplace";
     case "ADMIN":

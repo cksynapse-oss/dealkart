@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
 import { cn, formatINR, getStatusColor } from "@/lib/utils";
-import type { Listing } from "@/types/database";
+import type { Listing, OnboardingStatus } from "@/types/database";
+import { redirect } from "next/navigation";
 
 export default async function SellerListingsPage() {
   const supabase = await createClient();
@@ -19,6 +20,17 @@ export default async function SellerListingsPage() {
 
   if (!user) {
     return null;
+  }
+
+  const { data: profile } = await supabase
+    .from("seller_profiles")
+    .select("onboarding_status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  // Redirect to onboarding if not completed
+  if (profile?.onboarding_status !== "ACTIVE") {
+    redirect("/seller/onboarding");
   }
 
   const { data: listings } = await supabase

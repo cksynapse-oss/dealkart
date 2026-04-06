@@ -13,6 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { cn, formatINR, getStatusColor } from "@/lib/utils";
 import type { Listing, OnboardingStatus } from "@/types/database";
+import { redirect } from "next/navigation";
 
 function profileStatusLabel(status: OnboardingStatus): string {
   const map: Record<OnboardingStatus, string> = {
@@ -47,6 +48,11 @@ export default async function SellerDashboardPage() {
     .select("*")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  // Redirect to onboarding if not completed
+  if (profile?.onboarding_status !== "ACTIVE") {
+    redirect("/seller/onboarding");
+  }
 
   const { data: listings } = await supabase
     .from("listings")
