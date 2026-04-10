@@ -28,12 +28,11 @@ async function getDocuments() {
     return [];
   }
 
-  // Generate signed URLs for each document
   const documentsWithUrls = await Promise.all(
     (documents || []).map(async (doc) => {
       const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from("seller-documents")
-        .createSignedUrl(doc.storage_path, 60 * 60); // 1 hour expiry
+        .createSignedUrl(doc.storage_path, 60 * 60);
 
       return {
         ...doc,
@@ -95,96 +94,95 @@ export default async function AdminDocumentsPage() {
                 No documents have been uploaded by sellers yet.
               </p>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Seller
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Document Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      File Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Size
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Uploaded
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documents.map((doc) => (
-                    <tr key={doc.id} className="border-b">
-                      <td className="px-4 py-3">
+          ) : (() => {
+            const grouped: Record<string, { sellerName: string; docs: typeof documents }> = {};
+            for (const doc of documents) {
+              const key = doc.seller_profiles?.id ?? "unknown";
+              if (!grouped[key]) {
+                grouped[key] = {
+                  sellerName: doc.seller_profiles?.business_legal_name || "Unknown Seller",
+                  docs: [],
+                };
+              }
+              grouped[key].docs.push(doc);
+            }
+            const groups = Object.values(grouped);
+
+            return (
+              <div className="space-y-6">
+                {groups.map((group, gi) => {
+                  const pendingCount = group.docs.filter(d => (d.verification_status || "PENDING") === "PENDING").length;
+                  return (
+                    <div key={gi} className="border rounded-lg overflow-hidden">
+                      <div className="px-4 py-3 bg-slate-50 border-b flex items-center justify-between">
                         <div>
-                          <div className="font-medium">
-                            {doc.seller_profiles?.business_legal_name || "Unknown"}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Seller ID: {doc.seller_profiles?.user_id || "Unknown"}
-                          </div>
+                          <p className="font-semibold text-slate-900 text-sm">{group.sellerName}</p>
+                          <p className="text-xs text-slate-500">{group.docs.length} document{group.docs.length !== 1 ? "s" : ""}</p>
                         </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-medium">{doc.document_type}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="max-w-[200px] truncate" title={doc.original_filename}>
-                          {doc.original_filename}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {formatFileSize(doc.file_size_bytes)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {doc.uploaded_at
-                          ? formatDistanceToNow(new Date(doc.uploaded_at), {
-                              addSuffix: true,
-                            })
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={statusBadgeVariant(doc.verification_status || "PENDING")}>
-                          {doc.verification_status || "PENDING"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {doc.signedUrl && (
-                            <Link
-                              href={doc.signedUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                              >
-                                <ExternalLink className="size-4" />
-                                View
-                              </Button>
-                            </Link>
-                          )}
-                          <AdminDocumentActions document={doc} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        {pendingCount > 0 && (
+                          <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">
+                            {pendingCount} pending
+                          </span>
+                        )}
+                      </div>
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b bg-white">
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Type</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">File Name</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">Size</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">Uploaded</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Status</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {group.docs.map((doc) => (
+                            <tr key={doc.id} className="border-b last:border-0">
+                              <td className="px-4 py-3">
+                                <span className="font-medium text-sm">{doc.document_type.replace(/_/g, " ")}</span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="max-w-[200px] truncate text-sm" title={doc.original_filename}>
+                                  {doc.original_filename}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
+                                {formatFileSize(doc.file_size_bytes)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
+                                {doc.uploaded_at
+                                  ? formatDistanceToNow(new Date(doc.uploaded_at), { addSuffix: true })
+                                  : "—"}
+                                </td>
+                              <td className="px-4 py-3">
+                                <Badge variant={statusBadgeVariant(doc.verification_status || "PENDING")}>
+                                  {doc.verification_status || "PENDING"}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  {doc.signedUrl && (
+                                    <Link href={doc.signedUrl} target="_blank" rel="noopener noreferrer">
+                                      <Button variant="outline" size="sm">
+                                        <ExternalLink className="size-4" />
+                                        View
+                                      </Button>
+                                    </Link>
+                                  )}
+                                  <AdminDocumentActions document={doc} />
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>

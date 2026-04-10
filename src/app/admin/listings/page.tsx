@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { formatINRShort, getStatusColor, getIndustryLabel } from "@/lib/utils";
 import { AdminListingActions } from "@/components/admin/AdminListingActions";
+import Link from "next/link";
 
 export const metadata = { title: "Listings Review — TheBuzSale Admin" };
 
@@ -38,7 +39,9 @@ export default async function AdminListingsPage() {
             ) : listings.map((l: any) => (
               <tr key={l.id} className="hover:bg-slate-50/50">
                 <td className="px-4 py-3">
-                  <p className="font-medium text-slate-900 line-clamp-1">{l.headline || "Untitled"}</p>
+                  <Link href={`/admin/listings/${l.id}`} className="hover:text-emerald-700">
+                    <p className="font-medium text-slate-900 line-clamp-1 hover:underline">{l.headline || "Untitled"}</p>
+                  </Link>
                   <p className="text-xs text-slate-500">{l.city}{l.state ? `, ${l.state}` : ""}</p>
                 </td>
                 <td className="px-4 py-3 hidden md:table-cell">
