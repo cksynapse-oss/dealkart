@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import { FileText, LayoutDashboard, MessageSquare, Settings, UserCheck } from "lucide-react";
 
 const allNav = [
-  { href: "/seller/dashboard", label: "Dashboard", icon: LayoutDashboard, soon: false },
+  { href: "/seller/dashboard", label: "Dashboard", icon: LayoutDashboard, soon: false, hideWhenActive: false },
   { href: "/seller/onboarding", label: "Onboarding", icon: UserCheck, soon: false, hideWhenActive: true },
-  { href: "/seller/listings", label: "My Listings", icon: FileText, soon: false },
-  { href: "/seller/messages", label: "Messages", icon: MessageSquare, soon: true },
-  { href: "/seller/settings", label: "Settings", icon: Settings, soon: false },
+  { href: "/seller/listings", label: "My Listings", icon: FileText, soon: false, hideWhenActive: false },
+  { href: "/seller/messages", label: "Messages", icon: MessageSquare, soon: true, hideWhenActive: false },
+  { href: "/seller/settings", label: "Settings", icon: Settings, soon: false, hideWhenActive: false },
 ] as const;
 
 export function SellerSidebarNav({ onboardingDone }: { onboardingDone: boolean }) {
