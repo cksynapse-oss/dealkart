@@ -122,7 +122,11 @@ export default function SellerOnboardingPage() {
         </p>
 
         <div className="mt-10 rounded-xl border border-slate-200 bg-white px-4 py-6 sm:px-8">
-          <OnboardingStepper currentStep={step} completedSteps={completedSteps} />
+          <OnboardingStepper
+            currentStep={step}
+            completedSteps={completedSteps}
+            onStepClick={(s) => setStep(s)}
+          />
         </div>
 
         <div className="mt-8 space-y-8">

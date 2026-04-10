@@ -24,12 +24,12 @@ export default async function SellerListingsPage() {
 
   const { data: profile } = await supabase
     .from("seller_profiles")
-    .select("onboarding_status")
+    .select("onboarding_status, onboarding_layer_completed")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // Redirect to onboarding if not completed
-  if (profile?.onboarding_status !== "ACTIVE") {
+  // Only redirect if seller has never started onboarding
+  if (!profile || profile.onboarding_layer_completed === 0) {
     redirect("/seller/onboarding");
   }
 
